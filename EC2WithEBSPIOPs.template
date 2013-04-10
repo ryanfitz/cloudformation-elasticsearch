@@ -1,0 +1,149 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS CloudFormation Template for setting up provisioned iops",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type" : "String"
+    },
+
+    "SSHFrom" : {
+      "Description" : "Lockdown SSH access (default can be accessed from anywhere)",
+      "Type" : "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default" : "0.0.0.0/0",
+      "AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription" : "must be a valid CIDR range of the form x.x.x.x/x."
+    }
+  },
+
+  "Mappings" : {
+    "RegionMap" : {
+      "us-east-1"      : { "AMI" : "ami-3275ee5b" },
+      "us-west-2"      : { "AMI" : "ami-48da5578" },
+      "us-west-1"      : { "AMI" : "ami-734c6936" },
+      "eu-west-1"      : { "AMI" : "ami-6d555119" },
+      "ap-southeast-1" : { "AMI" : "ami-3c0b4a6e" },
+      "ap-northeast-1" : { "AMI" : "ami-2819aa29" },
+      "sa-east-1"      : { "AMI" : "ami-fe36e8e3" }
+    }
+  },
+
+  "Resources" : {
+    "ElasticsearchInstance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "packages" : {
+              "yum" : {
+                "mdadm"               : [],
+                "xfsprogs"            : [],
+                "puppet"              : []
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "InstanceType" : "m1.large",
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]},
+        "EbsOptimized" : "true",
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -v\n",
+          "yum update -y aws-cfn-bootstrap\n",
+
+          "# Helper function\n",
+          "function error_exit\n",
+          "{\n",
+          "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '", { "Ref" : "WaitHandle" }, "'\n",
+          "  exit 1\n",
+          "}\n",
+
+          "# Install packages\n",
+          "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackId" }, " -r ElasticsearchInstance ",
+          "    --region ", { "Ref" : "AWS::Region" }, " || error_exit 'Failed to run cfn-init'\n",
+
+          "# All is well so signal success\n",
+          "/opt/aws/bin/cfn-signal -e 0 -r \"Elasticsearch setup complete\" '", { "Ref" : "WaitHandle" }, "'\n"
+        ]]}}
+      }
+    },
+
+    "WaitHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "ElasticsearchInstance",
+      "Properties" : {
+        "Handle" : {"Ref" : "WaitHandle"},
+        "Timeout" : "900"
+      }
+    },
+
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : { "Ref" : "SSHFrom" }
+        } ]
+      }
+    },
+
+    "SdfMountPoint" : {
+      "Type" : "AWS::EC2::VolumeAttachment",
+      "Properties" : {
+        "InstanceId" : { "Ref" : "ElasticsearchInstance" },
+        "VolumeId"  : { "Ref" : "SdfVolume" },
+        "Device" : "/dev/sdf"
+      }
+    },
+
+    "SdgMountPoint" : {
+      "Type" : "AWS::EC2::VolumeAttachment",
+      "Properties" : {
+        "InstanceId" : { "Ref" : "ElasticsearchInstance" },
+        "VolumeId"  : { "Ref" : "SdgVolume" },
+        "Device" : "/dev/sdg"
+      }
+    },
+
+    "SdfVolume" : {
+      "Type" : "AWS::EC2::Volume",
+      "Properties" : {
+        "Size" : "20",
+        "VolumeType" : "io1",
+        "Iops" : "200",
+        "AvailabilityZone" : { "Fn::GetAtt" : [ "ElasticsearchInstance", "AvailabilityZone" ]}
+      }
+    },
+
+    "SdgVolume" : {
+      "Type" : "AWS::EC2::Volume",
+      "Properties" : {
+        "Size" : "20",
+        "VolumeType" : "io1",
+        "Iops" : "200",
+        "AvailabilityZone" : { "Fn::GetAtt" : [ "ElasticsearchInstance", "AvailabilityZone" ]}
+      }
+    }
+  },
+
+  "Outputs" : {
+    "InstanceId" : {
+      "Description" : "InstanceId of the newly created EC2 instance",
+      "Value" : { "Ref" : "ElasticsearchInstance" }
+    }
+  }
+}
