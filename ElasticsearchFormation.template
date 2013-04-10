@@ -6,7 +6,8 @@
   "Parameters" : {
     "KeyName" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
-      "Type" : "String"
+      "Type" : "String",
+      "Default" : "wworthy-ci-key"
     },
 
     "SSHFrom" : {
@@ -69,6 +70,18 @@
           "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackId" }, " -r ElasticsearchInstance ",
           "    --region ", { "Ref" : "AWS::Region" }, " || error_exit 'Failed to run cfn-init'\n",
 
+          "## Waiting for EBS mounts to become available\n",
+          "while [ ! -e /dev/sdf ]; do echo waiting for /dev/sdf to attach; sleep 10; done\n",
+          "while [ ! -e /dev/sdg ]; do echo waiting for /dev/sdg to attach; sleep 10; done\n",
+
+          "mdadm --verbose --create /dev/md0 --level=0 --chunk=64 --raid-devices=2 /dev/sdf /dev/sdg > /tmp/mdadm.log 2>&1\n",
+          "echo '`mdadm --detail --scan`' | tee -a /etc/mdadm.conf\n",
+
+          "mkdir -p /media/p_iops_vol0\n",
+          "mkfs.xfs /dev/md0\n",
+          "echo '/dev/md0 /media/p_iops_vol0 xfs defaults,noatime 0 0' | tee -a /etc/fstab\n",
+          "mount /media/p_iops_vol0 > /tmp/mount_piops.log 2>&1\n",
+
           "# All is well so signal success\n",
           "/opt/aws/bin/cfn-signal -e 0 -r \"Elasticsearch setup complete\" '", { "Ref" : "WaitHandle" }, "'\n"
         ]]}}
@@ -81,10 +94,10 @@
 
     "WaitCondition" : {
       "Type" : "AWS::CloudFormation::WaitCondition",
-      "DependsOn" : "ElasticsearchInstance",
+      "DependsOn" : ["SdfMountPoint", "SdgMountPoint"],
       "Properties" : {
         "Handle" : {"Ref" : "WaitHandle"},
-        "Timeout" : "900"
+        "Timeout" : "300"
       }
     },
 
@@ -144,6 +157,11 @@
     "InstanceId" : {
       "Description" : "InstanceId of the newly created EC2 instance",
       "Value" : { "Ref" : "ElasticsearchInstance" }
+    },
+
+    "Hostname" : {
+      "Value" : { "Fn::GetAtt" : [ "ElasticsearchInstance", "PublicDnsName" ] },
+      "Description" : "DNS Name of the newly created EC2 instance"
     }
   }
 }
