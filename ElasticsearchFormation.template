@@ -45,6 +45,9 @@
                 "xfsprogs"            : [],
                 "puppet"              : []
               }
+            },
+            "sources" : {
+              "/opt/cloudformation" : "https://github.com/ryanfitz/cloudformation-elasticsearch/tarball/master"
             }
           }
         }
