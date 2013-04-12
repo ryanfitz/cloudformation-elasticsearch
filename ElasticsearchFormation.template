@@ -53,7 +53,7 @@
         }
       },
       "Properties" : {
-        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "SecurityGroups" : [ "elasticsearch", { "Ref" : "InstanceSecurityGroup" } ],
         "InstanceType" : "m1.large",
         "KeyName" : { "Ref" : "KeyName" },
         "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]},
