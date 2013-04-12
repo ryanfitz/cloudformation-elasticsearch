@@ -62,6 +62,7 @@
           { "Key" : "Name", "Value": "Elasticsearch-v0.19.12" },
           { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} }
         ],
+        "IamInstanceProfile": { "Ref": "ElasticsearchInstanceProfile" },
         "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
           "#!/bin/bash -v\n",
           "yum update -y aws-cfn-bootstrap\n",
@@ -107,6 +108,45 @@
       "Properties" : {
         "Handle" : {"Ref" : "WaitHandle"},
         "Timeout" : "300"
+      }
+    },
+
+    "ElasticsearchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "ec2.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+          } ]
+        },
+        "Path": "/"
+      }
+    },
+
+    "RolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "elasticsearch",
+        "PolicyDocument": {
+          "Statement": [ {
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+          } ]
+        },
+        "Roles": [ { "Ref": "ElasticsearchRole" } ]
+      }
+    },
+
+    "ElasticsearchInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ { "Ref": "ElasticsearchRole" } ]
       }
     },
 
