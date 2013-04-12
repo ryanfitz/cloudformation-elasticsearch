@@ -180,6 +180,13 @@ path.logs: /var/log/elasticsearch
 # Set this property to true to lock the memory:
 #
 
+cache:
+  memory:
+    # buffer_size:              100k
+    # cache_size:               50m
+    # direct:                   true
+    # warm_cache:               false
+
 bootstrap.mlockall: true
 
 cloud:
