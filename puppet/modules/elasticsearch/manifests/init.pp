@@ -90,7 +90,10 @@ class elasticsearch($version = "0.19.12") {
 
   service { "$esBasename":
     ensure => running,
-    provider => 'upstart',
+    restart   => '/sbin/restart elasticsearch',
+    start     => '/sbin/start elasticsearch',
+    stop      => '/sbin/stop elasticsearch',
+    status    => '/sbin/status elasticsearch',
     require => File["/etc/init/$esBasename.conf"],
   }
 
