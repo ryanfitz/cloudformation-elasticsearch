@@ -15,7 +15,7 @@ class elasticsearch($version = "0.19.12") {
     recurse    => true
   }
 
-  file { '/tmp/$esFile':
+  file { "/tmp/$esFile":
     source => "puppet:///modules/elasticsearch/$esFile",
     mode => 644,
     owner => "root",
@@ -35,7 +35,7 @@ class elasticsearch($version = "0.19.12") {
     command => "cp -rf /tmp/$esName/. $esPath/.",
     require => Exec["extract-elasticsearch"],
     unless  => "test -f $esPath/bin/elasticsearch",
-    notify => Service["$esBasename"],
+    #notify => Service["$esBasename"],
   }
 
   exec {"clean-tmp-elasticsearch":
@@ -44,4 +44,39 @@ class elasticsearch($version = "0.19.12") {
     require => Exec["elasticsearch-package"],
   }
 
+  file { "/etc/$esBasename":
+    ensure => link,
+    target => "$esPath/config",
+    require => Exec["elasticsearch-package"],
+  }
+
+  file { "/etc/init/elasticsearch.conf":
+    source => "puppet:///modules/elasticsearch/elasticsearch.conf",
+    mode => 644,
+    owner => "root",
+    group => "root",
+  }
+j
+  file { "$esPath/config/elasticsearch.yml":
+    source => "puppet:///modules/elasticsearch/elasticsearch.yml",
+    mode => 644,
+    owner => "root",
+    group => "root",
+  }
+
+  file { "/var/log/elasticsearch":
+    ensure  => directory,
+    mode    => 644,
+    owner   => "root",
+    group   => "root",
+    recurse => true
+  }
+
+  file { [ "/media/p_iops_vol0/elasticsearch/", "/media/p_iops_vol0/elasticsearch/data"]:
+    ensure => "directory",
+    owner   => "root",
+    group   => "root",
+    mode    => 755,
+  }
 }
+
