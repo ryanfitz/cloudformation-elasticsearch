@@ -65,12 +65,12 @@ class elasticsearch($version = "0.19.12") {
     require => Exec["elasticsearch-package"],
   }
 
-  #exec { "aws-cloud-plugin":
-    #path => "/bin:/usr/bin",
-    #command => "$esPath/bin/plugin -install elasticsearch/elasticsearch-cloud-aws/1.10.0 $esPath",
-    #require => Exec["elasticsearch-package"],
-    #unless  => "test -d $esPath/plugins/cloud-aws",
-  #}
+  exec { "aws-cloud-plugin":
+    path => "/bin:/usr/bin",
+    command => "$esPath/bin/plugin -install elasticsearch/elasticsearch-cloud-aws/1.10.0 $esPath",
+    require => Exec["elasticsearch-package"],
+    unless  => "test -d $esPath/plugins/cloud-aws",
+  }
 
   file { "/var/log/elasticsearch":
     ensure  => directory,
