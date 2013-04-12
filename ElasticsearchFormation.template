@@ -4,6 +4,12 @@
   "Description" : "AWS CloudFormation Template for setting up provisioned iops",
 
   "Parameters" : {
+
+    "Zone" : {
+      "Description" : "Availability zone to launch instance in",
+      "Type" : "String"
+    },
+
     "KeyName" : {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
       "Type" : "String",
@@ -53,6 +59,7 @@
         }
       },
       "Properties" : {
+        "AvailabilityZone": { "Ref" : "Zone" },
         "SecurityGroups" : [ "elasticsearch", { "Ref" : "InstanceSecurityGroup" } ],
         "InstanceType" : "m1.large",
         "KeyName" : { "Ref" : "KeyName" },
