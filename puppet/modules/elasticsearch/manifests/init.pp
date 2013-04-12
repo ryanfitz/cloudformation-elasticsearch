@@ -56,7 +56,7 @@ class elasticsearch($version = "0.19.12") {
     owner => "root",
     group => "root",
   }
-j
+
   file { "$esPath/config/elasticsearch.yml":
     source => "puppet:///modules/elasticsearch/elasticsearch.yml",
     mode => 644,
