@@ -89,6 +89,8 @@
           "echo '/dev/md0 /media/p_iops_vol0 xfs defaults,noatime 0 0' | tee -a /etc/fstab\n",
           "mount /media/p_iops_vol0 > /tmp/mount_piops.log 2>&1\n",
 
+          "puppet apply --modulepath=/opt/cloudformation/puppet/modules -e \"include elasticsearch\"\n",
+
           "# All is well so signal success\n",
           "/opt/aws/bin/cfn-signal -e 0 -r \"Elasticsearch setup complete\" '", { "Ref" : "WaitHandle" }, "'\n"
         ]]}}
