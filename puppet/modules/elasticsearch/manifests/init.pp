@@ -55,6 +55,7 @@ class elasticsearch($version = "0.19.12") {
     mode => 644,
     owner => "root",
     group => "root",
+    require => Exec["elasticsearch-package"],
   }
 
   file { "$esPath/config/elasticsearch.yml":
@@ -86,5 +87,12 @@ class elasticsearch($version = "0.19.12") {
     group   => "root",
     mode    => 755,
   }
+
+  service { "$esBasename":
+    ensure => running,
+    provider => 'upstart',
+    require => File["/etc/init/$esBasename.conf"],
+  }
+
 }
 
