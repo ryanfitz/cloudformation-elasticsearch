@@ -191,9 +191,9 @@
     "SdfVolume" : {
       "Type" : "AWS::EC2::Volume",
       "Properties" : {
-        "Size" : "20",
+        "Size" : "40",
         "VolumeType" : "io1",
-        "Iops" : "200",
+        "Iops" : "100",
         "AvailabilityZone" : { "Fn::GetAtt" : [ "ElasticsearchInstance", "AvailabilityZone" ]}
       }
     },
@@ -201,9 +201,9 @@
     "SdgVolume" : {
       "Type" : "AWS::EC2::Volume",
       "Properties" : {
-        "Size" : "20",
+        "Size" : "40",
         "VolumeType" : "io1",
-        "Iops" : "200",
+        "Iops" : "100",
         "AvailabilityZone" : { "Fn::GetAtt" : [ "ElasticsearchInstance", "AvailabilityZone" ]}
       }
     }
