@@ -90,7 +90,7 @@
           "while [ ! -e /dev/sdg ]; do echo waiting for /dev/sdg to attach; sleep 10; done\n",
 
           "mdadm --verbose --create /dev/md0 --level=0 --chunk=64 --raid-devices=2 /dev/sdf /dev/sdg > /tmp/mdadm.log 2>&1\n",
-          "echo '`mdadm --detail --scan`' | tee -a /etc/mdadm.conf\n",
+          "mdadm --detail --scan > /etc/mdadm.conf\n",
 
           "mkdir -p /media/p_iops_vol0\n",
           "mkfs.xfs /dev/md0\n",
